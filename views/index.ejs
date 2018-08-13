@@ -9,31 +9,48 @@
   <script src="/socket.io/socket.io.js"></script>
 </head>
 <body>
-  <video autoplay></video>
+  <!-- <div id="cameraSelector"> 
+    Video: <select name="camera" id="camera"></select>
+  </div> -->
+  <video id="myVideoTag" autoplay></video>
+  <video id="theirVideoTag" autoplay></video>
+  <!-- <video autoplay></video> -->
 
   <div>
     <label for="name">Your name:</label> <input type="text" id="myName"/>
     <label for="message">Message:</label> <input type="text" id="myMessage"/>
     <input type="submit" id="sendMessage"/>
     <div id="chatArea">Message output:</br></div>
+    <div id="signalingArea">Signaling Message:</br></div>
 
   </div>
 
   <script>
     
+    
     var myName = document.querySelector('#myName');
     var myMessage = document.querySelector('#myMessage');
     var sendMessage = document.querySelector('#sendMessage');
     var chatArea = document.querySelector('#chatArea');
+    var signalingArea = document.querySelector("#signalingArea")
     var ROOM = "chat";
+    var SIGNAL_ROOM = "signal_room";
+
+    var videoArea = document.querySelector("#myVideoTag");
+    var theirVideoArea = document.querySelector("#theirVideoTag");
 
 
-    var videoArea = document.querySelector("video");
-
-    startStream();
+    // startStream();
 
     io = io.connect();
-    io.emit('ready', ROOM);
+    io.emit('ready', {"chat_room": ROOM, "signal_room": SIGNAL_ROOM});
+
+    io.emit('signal', {"type": "user_here", "message": "Are you ready for a call?", "room": SIGNAL_ROOM});
+
+    
+    io.on('signaling_message', function(data){
+      displaySignalMessage("Signal received: " + data.type);
+    });
 
     io.on('announce', function(data){
       displayMessage(data.message);
@@ -52,18 +69,27 @@
       chatArea.innerHTML = chatArea.innerHTML + "<br/>" + message;
     }
 
+    function displaySignalMessage(message){
+      signalingArea.innerHTML = signalingArea.innerHTML + "<br/>" + message;
+    }
+
     function startStream(){
       navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+
+      var videoSource = videoSelect.value;
 
       var constrains = {
         audio: true, 
         video: {
           mandatory: {
-            minWidth: 640,
-            maxWidth: 640,
-            minHeight: 360,
-            maxHeight: 480
-          }
+            minWidth: 240,
+            maxWidth: 240,
+            minHeight: 240,
+            maxHeight: 240
+          },
+          optional: [{
+            sourceId: videoSource
+          }]
         }};
 
       navigator.getUserMedia(constrains, onSuccess, onError); 
