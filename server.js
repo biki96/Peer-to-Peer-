@@ -1,11 +1,13 @@
 const express = require('express.io');
-require('coffee-script');
 const app = express();
 
 app.http().io();
 
 
-const port = 3000;
+// const port = 3000;
+var port = process.env.PORT || 3000;
+
+
 
 app.use(express.static(__dirname + '/public'));
 
