@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" type="text/css" href="style.css">
+  <title>Peer to Peer</title>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+  <video autoplay></video>
+
+  <div>
+    <label for="name">Your name:</label> <input type="text" id="myName"/>
+    <label for="message">Message:</label> <input type="text" id="myMessage"/>
+    <input type="submit" id="sendMessage"/>
+    <div id="chatArea">Message output:</br></div>
+
+  </div>
+
+  <script>
+    
+    var myName = document.querySelector('#myName');
+    var myMessage = document.querySelector('#myMessage');
+    var sendMessage = document.querySelector('#sendMessage');
+    var chatArea = document.querySelector('#chatArea');
+    var ROOM = "chat";
+
+
+    var videoArea = document.querySelector("video");
+
+    startStream();
+
+    io = io.connect();
+    io.emit('ready', ROOM);
+
+    io.on('announce', function(data){
+      displayMessage(data.message);
+    });
+
+    io.on('message', function(data){
+      displayMessage(data.author + ":" + data.message);
+    });
+
+    sendMessage.addEventListener('click', function(ev){
+      io.emit('send', {"author": myName.value, "message": myMessage.value, "room": ROOM});
+      ev.preventDefault();
+    }, false);
+
+    function displayMessage(message){
+      chatArea.innerHTML = chatArea.innerHTML + "<br/>" + message;
+    }
+
+    function startStream(){
+      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+
+      var constrains = {
+        audio: true, 
+        video: {
+          mandatory: {
+            minWidth: 640,
+            maxWidth: 640,
+            minHeight: 360,
+            maxHeight: 480
+          }
+        }};
+
+      navigator.getUserMedia(constrains, onSuccess, onError); 
+    };
+
+
+    function onSuccess(stream){
+      console.log('Success! We have a stream');
+      videoArea.src = window.URL.createObjectURL(stream);
+      videoArea.className = "grayscale_filter";
+      videoArea.play();
+    };
+
+    function onError(error){
+      console.log('Error with getUserMedia', error);
+    };
+
+  </script>
+  
+</body>
+</html>
