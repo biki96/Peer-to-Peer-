@@ -40,30 +40,21 @@
         'url': 'stun:stun.l.google.com:19302'
       }]
     };
-    
     var RTCPeerConn;
-
-
-    // var configuration = {
-    //     // Uncomment this code to add custom iceServers
-    //     "iceServers": [{ "url": "stun:stun.1.google.com:19302" }]
-    // };
-
 
     var myVideoArea = document.querySelector("#myVideoTag");
     var theirVideoArea = document.querySelector("#theirVideoTag");
-
-
     // startStream();
 
     io = io.connect();
+
     io.emit('ready', {"chat_room": ROOM, "signal_room": SIGNAL_ROOM});
 
     io.emit('signal', {"type": "user_here", "message": "Are you ready for a call?", "room": SIGNAL_ROOM});
 
     
     io.on('signaling_message', function(data){
-      displaySignalMessage("Signal received: " + data.type);
+      displaySignalMessage("Signal received: " + data.type); 
 
       //Setup the RTC Peer Connection
         if(!RTCPeerConn)
@@ -74,7 +65,7 @@
           if(message.sdp){
             RTCPeerConn.setRemoteDescription(new RTCSessionDescription(message.sdp), function(){
               //if we received and offer, we need to answer 
-              if(RTCPeerConn.setRemoteDescription.type == 'offer'){
+              if(RTCPeerConn.remoteDescription.type == 'offer'){
                 RTCPeerConn.createAnswer(sendLocalDesc, logError);
               }
             }, logError);
@@ -94,7 +85,7 @@
       //send any ice candidates to the other peer
       RTCPeerConn.onicecandidate = function(evt){
         if(evt.candidate)
-          io.emit('signal', {'type': "ice candidate", 'message': JSON.stringify({'candidate': env.candidate}), 'room': SIGNAL_ROOM});
+          io.emit('signal', {'type': "ice candidate", 'message': JSON.stringify({'candidate': evt.candidate}), 'room': SIGNAL_ROOM});
           displaySignalMessage('completed that ice candidate...');
       };
 
@@ -104,9 +95,9 @@
       };
 
        //once remote stream arrive, show
-       RTCPeerConn.onaddstream = function(ent){
+       RTCPeerConn.onaddstream = function(evt){
         displaySignalMessage('going to add their stream...');
-        theirVideoArea.src = URL.createObjectURL(env.stream);
+        theirVideoArea.src = URL.createObjectURL(evt.stream);
       };
 
       //get local stream, show it in our video tag and add it to be sent
@@ -115,12 +106,11 @@
               'audio': false,
               'video': true
             }, function(stream){
+
               displaySignalMessage('going to display my stream...');
               myVideoArea.src = URL.createObjectURL(stream);
               RTCPeerConn.addStream(stream);
-            }, logError);
-
-      
+            }, logError);   
     };
 
     function sendLocalDesc(desc){
@@ -156,39 +146,39 @@
       signalingArea.innerHTML = signalingArea.innerHTML + "<br/>" + message;
     }
 
-    function startStream(){
-      navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
+    // function startStream(){
+    //   navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia;
 
-      var videoSource = videoSelect.value;
+    //   var videoSource = videoSelect.value;
 
-      var constrains = {
-        audio: true, 
-        video: {
-          mandatory: {
-            minWidth: 240,
-            maxWidth: 240,
-            minHeight: 240,
-            maxHeight: 240
-          },
-          optional: [{
-            sourceId: videoSource
-          }]
-        }};
+    //   var constrains = {
+    //     audio: true, 
+    //     video: {
+    //       mandatory: {
+    //         minWidth: 240,
+    //         maxWidth: 240,
+    //         minHeight: 240,
+    //         maxHeight: 240
+    //       },
+    //       optional: [{
+    //         sourceId: videoSource
+    //       }]
+    //     }};
 
-      navigator.getUserMedia(constrains, onSuccess, onError); 
-    };
+    //   navigator.getUserMedia(constrains, onSuccess, onError); 
+    // };
 
 
-    function onSuccess(stream){
-      console.log('Success! We have a stream');
-      videoArea.src = window.URL.createObjectURL(stream);
-      videoArea.className = "grayscale_filter";
-      videoArea.play();
-    };
+    // function onSuccess(stream){
+    //   console.log('Success! We have a stream');
+    //   videoArea.src = window.URL.createObjectURL(stream);
+    //   videoArea.className = "grayscale_filter";
+    //   videoArea.play();
+    // };
 
-    function onError(error){
-      console.log('Error with getUserMedia', error);
-    };
+    // function onError(error){
+    //   console.log('Error with getUserMedia', error);
+    // };
 
   </script>
   
